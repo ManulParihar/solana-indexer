@@ -2,8 +2,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 #[derive(Debug, Serialize)]
-#[serde(rename_all="lowercase")]
 pub struct JsonRpcRequest {
+    #[serde(rename = "jsonrpc")]
     json_rpc: String,
     id: u64,
     method: String,
@@ -12,6 +12,7 @@ pub struct JsonRpcRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct JsonRpcResponse<T> {
+    #[serde(rename = "jsonrpc")]
     pub json_rpc: String,
     pub id: u64,
     pub result: Option<T>,

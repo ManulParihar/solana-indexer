@@ -14,7 +14,7 @@ impl RpcClient {
         })];
 
         self.request::<u64>(
-            "get_slot",
+            "getSlot",
             params
         ).await
     }
