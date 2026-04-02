@@ -1,7 +1,6 @@
 use std::time::Duration;
-use tokio::time::sleep;
 
-use crate::{config::Config, rpc::client::RpcClient};
+use crate::{config::Config, indexer::poller::Poller, rpc::client::RpcClient};
 
 pub struct Indexer {
     pub rpc_client: RpcClient,
@@ -14,14 +13,7 @@ impl Indexer {
     }
 
     pub async fn run(&self, interval: Duration) {
-        loop {
-            let slots = self.rpc_client.get_slot().await;
-            match slots {
-                Ok(s) => println!("Slot: {}", s),
-                Err(e) => println!("Error polling slot: {}", e)
-            };
-
-            sleep(interval).await;
-        }
+        let mut poller = Poller::new(self.rpc_client.clone(), interval);
+        poller.poll_slots().await;
     }
 }
