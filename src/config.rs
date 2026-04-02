@@ -4,10 +4,11 @@ use std::time::Duration;
 pub struct Config {
     pub rpc_url: String,
     pub polling_interval: Duration,
+    pub address: String,
 }
 
 impl Config {
-    pub fn new(rpc_url: String, polling_interval: Duration) -> Config {
-        Config { rpc_url, polling_interval }
+    pub fn new(rpc_url: String, polling_interval: Duration, address: String) -> Config {
+        Config { rpc_url, polling_interval, address }
     }
 }

@@ -13,7 +13,11 @@ impl Indexer {
     }
 
     pub async fn run(&self, interval: Duration) {
-        let mut poller = Poller::new(self.rpc_client.clone(), interval);
+        let mut poller = Poller::new(
+            self.rpc_client.clone(),
+            interval,
+            self.config.address.clone()
+        );
         poller.poll_slots().await;
     }
 }

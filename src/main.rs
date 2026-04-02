@@ -10,9 +10,10 @@ use solana_indexer::{
 async fn main() {
     dotenv().ok();
     let rpc_url  = String::from(env::var("RPC_URL").expect("RPC_URL not set"));
-    let polling_interval = Duration::from_millis(400);
+    let sol_address = String::from(env::var("SOL_ADDRESS").expect("Address not set"));
+    let polling_interval = Duration::from_secs(2);
     
-    let config = Config::new(rpc_url, polling_interval);
+    let config = Config::new(rpc_url, polling_interval, sol_address);
     let rpc_client = RpcClient::new(config.clone().rpc_url);
     
     let indexer = Indexer::new(rpc_client, config);

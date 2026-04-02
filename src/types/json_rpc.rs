@@ -1,3 +1,5 @@
+use std::fmt::{Debug};
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -10,7 +12,7 @@ pub struct JsonRpcRequest {
     params: Vec<Value>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 pub struct JsonRpcResponse<T> {
     #[serde(rename = "jsonrpc")]
     pub json_rpc: String,
@@ -29,3 +31,13 @@ impl JsonRpcRequest {
         }
     }
 }
+
+// impl<T> Debug for JsonRpcResponse<T> 
+// where T: Display {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match &self.result {
+//             Some(s) => write!(f, "JsonRpcResponse.result: {}", s),
+//             None => write!(f, "JsonRpcResponse.result: None")
+//         }
+//     }
+// }
