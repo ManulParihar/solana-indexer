@@ -1,5 +1,5 @@
-use std::time::Duration;
-use tokio::time::sleep;
+use std::{time::Duration};
+use tokio::{task::JoinHandle, time::sleep};
 
 use crate::rpc::{client::RpcClient, types::SignatureResponse};
 
@@ -36,15 +36,20 @@ impl Poller {
                                     }
                                 };
 
+                                let mut join_handles: Vec<JoinHandle<()>> = Vec::new();
+
                                 for slot in (prev_slot + 1)..=current_slot {
-                                    let filtered_signatures = signatures
-                                        .iter()
-                                        .filter(|s| s.slot == slot)
-                                        .count();
-                                    
-                                    println!("Processing slot: {}", slot);
-                                    println!("Found {} signatures for slot {}", filtered_signatures, slot);
+                                    let handle = tokio::spawn(
+                                        Self::process_slot(slot, signatures.clone())
+                                    );
+
+                                    join_handles.push(handle);
                                 }
+
+                                for handle in join_handles {
+                                    let _ = handle.await;
+                                }
+
                                 self.last_processed_slot = Some(current_slot);
                                 println!("Slot: {}", current_slot);
                             }
@@ -58,5 +63,15 @@ impl Poller {
 
             sleep(self.polling_interval).await
         }
+    }
+
+    pub async fn process_slot(slot: u64, signatures: Vec<SignatureResponse>) {
+        let filtered_signatures = signatures
+            .iter()
+            .filter(|s| s.slot == slot)
+            .count();
+        
+        println!("Processing slot: {}", slot);
+        println!("Found {} signatures for slot {}", filtered_signatures, slot);
     }
 }

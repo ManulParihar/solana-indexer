@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 // use serde_json::Value;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SignatureResponse {
     pub signature: String,
