@@ -1,5 +1,5 @@
-use std::{time::Duration};
-use tokio::{task::JoinHandle, time::sleep};
+use std::{sync::Arc, time::Duration};
+use tokio::{sync::Mutex, time::sleep};
 
 use crate::rpc::{client::RpcClient, types::SignatureResponse};
 
@@ -10,12 +10,36 @@ pub struct Poller {
     pub address: String,
 }
 
+pub struct SlotProcess {
+    slot: u64,
+    signatures: Vec<SignatureResponse>,
+}
+
 impl Poller {
     pub fn new(rpc_client: RpcClient, polling_interval: Duration, address: String) -> Self {
         Self { rpc_client, polling_interval, last_processed_slot: None, address }
     }
 
     pub async fn poll_slots(&mut self) {
+        let (sender, receiver) = tokio::sync::mpsc::channel::<SlotProcess>(10);
+        let receiver = Arc::new(Mutex::new(receiver));
+
+        for _ in 0..4 {
+            let rx = receiver.clone();
+
+            tokio::spawn(async move {
+                loop {
+                    let job = {
+                        let mut locked = rx.lock().await;
+                        locked.recv().await
+                    };
+                    if let Some(slot_process) = job {
+                        let _ = Self::process_slot(slot_process.slot, slot_process.signatures).await;
+                    }
+                }
+            });
+        }
+
         loop {
             match  self.rpc_client.get_slot().await {
                 Ok(current_slot) => {
@@ -35,19 +59,14 @@ impl Poller {
                                         continue;
                                     }
                                 };
-
-                                let mut join_handles: Vec<JoinHandle<()>> = Vec::new();
-
+                                
                                 for slot in (prev_slot + 1)..=current_slot {
-                                    let handle = tokio::spawn(
-                                        Self::process_slot(slot, signatures.clone())
-                                    );
-
-                                    join_handles.push(handle);
-                                }
-
-                                for handle in join_handles {
-                                    let _ = handle.await;
+                                    let _ = sender.send(
+                                        SlotProcess {
+                                            slot,
+                                            signatures: signatures.clone()
+                                        }
+                                    ).await;
                                 }
 
                                 self.last_processed_slot = Some(current_slot);
@@ -73,5 +92,6 @@ impl Poller {
         
         println!("Processing slot: {}", slot);
         println!("Found {} signatures for slot {}", filtered_signatures, slot);
+        sleep(Duration::from_millis(500)).await;
     }
 }
